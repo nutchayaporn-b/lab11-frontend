@@ -1,28 +1,19 @@
 <template>
   <h1>Events For Good</h1>
   <div class="events">
-    <EventCard
-      v-for="event in events"
-      :key="event.id"
-      :event="event"
-    ></EventCard>
+    <div class="search-box">
+      <BaseInput v-model="keyword" type="text" label="Search..." @input="updateKeyword" />
+
+    </div>
+
+    <EventCard v-for="event in events" :key="event.id" :event="event"></EventCard>
 
     <div class="pagination">
-      <router-link
-        id="page-prev"
-        :to="{ name: 'EventList', query: { page: page - 1 } }"
-        rel="prev"
-        v-if="page != 1"
-      >
+      <router-link id="page-prev" :to="{ name: 'EventList', query: { page: page - 1 } }" rel="prev" v-if="page != 1">
         Prev Page
       </router-link>
 
-      <router-link
-        id="page-next"
-        :to="{ name: 'EventList', query: { page: page + 1 } }"
-        rel="next"
-        v-if="hasNextPage"
-      >
+      <router-link id="page-next" :to="{ name: 'EventList', query: { page: page + 1 } }" rel="next" v-if="hasNextPage">
         Next Page
       </router-link>
     </div>
@@ -48,7 +39,8 @@ export default {
   data() {
     return {
       events: null,
-      totalEvents: 0
+      totalEvents: 0, // <--- Added this to store totalEvents
+      keyword: null
     }
   },
   // eslint-disable-next-line no-unused-vars
@@ -74,6 +66,28 @@ export default {
         return { name: 'NetworkError' } // <---
       })
   },
+  methods: {
+    updateKeyword() {
+      var queryFunction
+      if (this.keyword === '') {
+        queryFunction = EventService.getEvents(3, 1)
+      } else {
+        queryFunction = EventService.getEventByKeyword(this.keyword, 3, 1)
+      }
+
+      queryFunction
+        .then((response) => {
+          this.events = response.data
+          console.log(this.events)
+          this.totalEvents = response.headers['x-total-count']
+          console.log(this.totalEvents)
+        })
+        .catch(() => {
+          return { name: 'NetworkError' }
+        })
+    }
+  },
+
   computed: {
     hasNextPage() {
       let totalPages = Math.ceil(this.totalEvents / 3)
@@ -87,7 +101,13 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
+
 }
+
+.search-box {
+  width: 300px;
+}
+
 .pagination {
   display: flex;
   width: 290px;
